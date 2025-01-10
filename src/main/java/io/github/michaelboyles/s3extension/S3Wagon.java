@@ -38,6 +38,10 @@ import java.util.Optional;
 public final class S3Wagon extends ListeningWagon {
     private S3Client s3;
 
+    private static String NO_CACHE = "no-cache";
+    private static String CACHE_ONE_MIN_SWR_ONE_MONTH = "public,max-age=60,stale-while-revalidate=2592000";
+    private static String CACHE_FOREVER = "public,max-age=31536000,immutable";
+
     @Override
     public boolean supportsDirectoryCopy() {
         return true;
@@ -152,6 +156,7 @@ public final class S3Wagon extends ListeningWagon {
             .bucket(getBucketName())
             .key(getKey(destination.getName()))
             .acl(getAccessControlList().orElse(null))
+            .cacheControl(destination.getName().contains("maven-metadata.xml") ? CACHE_ONE_MIN_SWR_ONE_MONTH : CACHE_FOREVER)
             .build();
         try (InputStream inputStream = newUploadStream(source, destination)) {
             RequestBody body = RequestBody.fromInputStream(inputStream, source.length());
